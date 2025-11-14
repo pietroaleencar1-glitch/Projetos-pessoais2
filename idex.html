@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bife Geopolítica</title>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========= Paleta Frutiger Aero (azuis e verdes variados) ========= */
+    :root{
+      --blue-1: #a7d8ff;    /* claro */
+      --blue-2: #4fa9ff;    /* médio */
+      --blue-3: #1e4fbf;    /* profundo */
+      --blue-4: #0b2e63;    /* texto/contraste */
+
+      --green-1: #b9ffcb;   /* claro */
+      --green-2: #4fe38d;   /* médio */
+      --green-3: #1c7a4f;   /* profundo */
+
+      --glass-weak: rgba(255,255,255,0.16);
+      --glass-mid: rgba(255,255,255,0.28);
+      --glass-strong: rgba(255,255,255,0.42);
+      --stroke: rgba(255,255,255,0.65);
+      --shadow-1: rgba(0,0,0,0.25);
+      --shadow-2: rgba(0,0,0,0.35);
+      --text: #eef8ff;
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(255,255,255,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 20%, rgba(255,255,255,0.08), transparent 60%),
+        linear-gradient(180deg, #0a1a3a 0%, #0d254d 40%, #0c1530 100%);
+      overflow-x: hidden;
+    }
+
+    /* Bokeh suave + mapa opcional (substitua a imagem se quiser) */
+    .bg-map{
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        url('assets/mapa-fundo.png') center/cover no-repeat;
+      opacity: 0.08;
+      filter: contrast(110%) saturate(120%);
+    }
+    .bokeh { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .bokeh::before,
+    .bokeh::after{
+      content: "";
+      position: absolute;
+      width: 1400px; height: 1400px;
+      background:
+        radial-gradient(60px 60px at 15% 25%, rgba(255,255,255,0.35), transparent 55%),
+        radial-gradient(40px 40px at 35% 10%, rgba(255,255,255,0.25), transparent 55%),
+        radial-gradient(70px 70px at 75% 20%, rgba(255,255,255,0.28), transparent 55%),
+        radial-gradient(55px 55px at 65% 40%, rgba(255,255,255,0.22), transparent 55%);
+      filter: blur(20px);
+    }
+    .bokeh::before{ top:-300px; left:-300px; opacity:0.7; }
+    .bokeh::after{ bottom:-300px; right:-300px; opacity:0.5; transform: scale(0.9); }
+
+    /* ========= Superbar estilo Taskbar/W7 ========= */
+    .superbar{
+      position: sticky; top: 0; z-index: 50;
+      display:flex; align-items:center; gap:16px;
+      padding: 12px 16px;
+      background: linear-gradient(180deg, var(--glass-strong) 0%, var(--glass-weak) 100%);
+      backdrop-filter: saturate(140%) blur(12px);
+      border-bottom: 1px solid var(--stroke);
+      box-shadow: 0 6px 25px var(--shadow-2);
+    }
+    .logo{
+      display:flex; align-items:center; gap:10px;
+      padding:6px 10px; border-radius: 14px;
+      background: linear-gradient(180deg, var(--glass-strong), var(--glass-weak));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), 0 4px 12px var(--shadow-1);
+    }
+    .orb{
+      width: 28px; height: 28px; border-radius: 50%;
+      background:
+        radial-gradient(40% 40% at 30% 30%, #fff 0%, #c6f2ff 25%, transparent 60%),
+        radial-gradient(60% 60% at 60% 60%, #63b6ff 0%, #2c6ef5 50%, #143a93 85%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 0 14px rgba(60,160,255,0.6);
+    }
+    .brand{ font-weight:700; letter-spacing:0.2px; color:#eaf6ff; text-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+
+    .super-actions{ margin-left:auto; display:flex; gap:10px; }
+    .aero-btn{
+      padding:10px 16px;
+      color: var(--blue-4);
+      font-weight:700; border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.75);
+      background: linear-gradient(180deg, #f7fdff 0%, #e7f6ff 60%, #cde9ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 6px 18px var(--shadow-1);
+      cursor:pointer;
+      transition: transform .15s ease, box-shadow .2s ease;
+    }
+    .aero-btn:hover{ transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 10px 24px var(--shadow-2); }
+    .aero-btn.primary{
+      color:#022b55;
+      background: linear-gradient(180deg, var(--blue-1) 0%, var(--blue-2) 55%, var(--blue-3) 100%);
+      border-color: var(--blue-1);
+    }
+    .aero-btn.success{
+      color:#053323;
+      background: linear-gradient(180deg, var(--green-1) 0%, var(--green-2) 55%, var(--green-3) 100%);
+      border-color: var(--green-1);
+    }
+
+    /* ========= Conteúdo ========= */
+    .wrap{ width: min(1100px, 92vw); margin: 28px auto 70px; position: relative; z-index: 1; }
+
+    .welcome{
+      padding: 32px 28px; border-radius: 20px;
+      background:
+        radial-gradient(150% 120% at 80% 0%, var(--glass-strong), transparent 60%),
+        linear-gradient(180deg, var(--glass-strong) 0%, var(--glass-weak) 100%);
+      backdrop-filter: blur(14px) saturate(140%);
+      border: 1px solid var(--stroke);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), 0 18px 45px var(--shadow-2);
+      text-align:center;
+    }
+    .welcome h1{ margin:0 0 8px 0; font-size: 2.6rem; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+    .welcome p{ margin:0; color:#e4f3ff; opacity:0.92; font-size:1.2rem; }
+
+    /* Botões de ação principais (Discord/WhatsApp) */
+    .cta-row{
+      margin-top: 24px; display:flex; justify-content:center; gap:16px; flex-wrap:wrap;
+    }
+    .cta-link{
+      text-decoration:none; display:inline-block;
+      padding:14px 22px; border-radius:14px; font-weight:700; color:#fff;
+      border: 2px solid var(--blue-1);
+      background: linear-gradient(180deg, var(--blue-2), var(--blue-3));
+      box-shadow: 0 10px 28px var(--shadow-2), inset 0 1px 0 rgba(255,255,255,0.85);
+      transition: transform .15s ease, box-shadow .2s ease;
+    }
+    .cta-link:hover{ transform: translateY(-2px); box-shadow: 0 14px 36px var(--shadow-2), inset 0 1px 0 rgba(255,255,255,0.9); }
+
+    /* Grid principal (mantido) */
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+
+    .panel.image img{
+      display:block; width:100%; height:100%; object-fit: cover;
+      filter: saturate(110%); transform-origin: center;
+      transition: transform .25s ease, filter .25s ease;
+    }
+    .panel.image:hover img{ transform: scale(1.04); filter: saturate(120%) contrast(105%); }
+    .panel.cta{ display:flex; align-items:center; justify-content:center; }
+    .panel.cta a{
+      text-decoration: none; font-size: 1.2rem; font-weight:700; color:#0b2e63;
+      padding: 16px 22px; border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.75);
+      background: linear-gradient(180deg, #f7fdff 0%, #e7f6ff 60%, #cde9ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 10px 28px var(--shadow-2);
+      transition: transform .12s ease, box-shadow .2s ease;
+    }
+    .panel.cta a:hover{ transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 14px 34px rgba(0,0,0,0.4); }
+
+    /* Janela “Conheça a nossa história!” (mantida) */
+    .window{
+      margin-top: 38px; border-radius: 18px; overflow:hidden;
+      box-shadow: 0 24px 60px var(--shadow-2); border: 1px solid var(--stroke);
+      background: linear-gradient(180deg, var(--glass-mid), var(--glass-weak));
+      backdrop-filter: blur(14px) saturate(140%);
+    }
+    .window-titlebar{
+      position: relative; padding: 12px 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%);
+      color: var(--blue-4); font-weight: 700; text-align:center;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .caption{ position:absolute; right:8px; top:6px; display:flex; gap:6px; }
+    .cap-btn{ width:28px; height:22px; border-radius:4px; border:1px solid rgba(0,0,0,0.15);
+      background: linear-gradient(180deg, #ffffff 0%, #e6f3ff 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .cap-btn.close{ background: linear-gradient(180deg, #ffd7d7 0%, #ffb7b7 100%); }
+    .window-body{ padding: 28px 34px; color:#eef8ff; line-height:1.8; text-align:center; }
+
+    /* ========= Modais (mantidos: Informações, Colaborações, Álbum) ========= */
+    .modal{ display:none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,18,35,0.55); backdrop-filter: blur(8px) saturate(140%);
+      justify-content: center; align-items: center; padding: 20px;
+    }
+    .modal-content{
+      width: min(780px, 92vw); max-height: 82vh;
+      display:flex; flex-direction: column; border-radius: 18px; overflow:hidden;
+      background: linear-gradient(180deg, var(--glass-mid), var(--glass-weak));
+      border: 1px solid var(--stroke); box-shadow: 0 22px 60px rgba(0,0,0,0.5);
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{ from{ transform: scale(.96); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+    .modal-header{
+      padding: 12px 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+      color: var(--blue-4); font-weight:700; text-align:center; position: relative;
+    }
+    .modal-close{
+      position:absolute; right:10px; top:8px;
+      width:28px; height:24px; border-radius:4px; cursor:pointer;
+      border:1px solid rgba(0,0,0,0.15);
+      background: linear-gradient(180deg, #ffd7d7 0%, #ffb7b7 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .modal-body{ padding: 24px 28px; overflow-y: auto; color: var(--text); font-size:1.05rem; }
+    .modal-body strong{ color: var(--blue-1); }
+
+    /* ========= Scrollbars ========= */
+    ::-webkit-scrollbar{ width: 12px; }
+    ::-webkit-scrollbar-track{
+      background: linear-gradient(180deg, var(--glass-mid), var(--glass-weak));
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb{
+      background: linear-gradient(180deg, var(--blue-1), var(--blue-2));
+      border-radius: 10px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+    }
+
+    /* ========= Rodapé (mantido) ========= */
+    footer{
+      margin: 48px auto 28px; width: min(1100px, 92vw);
+      padding: 16px 18px; text-align:center; color:#d6ecff;
+      background: linear-gradient(180deg, var(--glass-mid), var(--glass-weak));
+      border: 1px solid var(--stroke); border-radius: 14px;
+      backdrop-filter: blur(10px); box-shadow: 0 14px 35px var(--shadow-2);
+    }
+
+    /* ========= Botões flutuantes (mantidos) ========= */
+    .floating{
+      position: fixed; right: 22px; bottom: 26px; z-index: 60;
+      display:flex; flex-direction: column; gap: 12px;
+    }
+    .float-btn{
+      display:flex; align-items:center; gap:10px;
+      padding: 10px 14px; border-radius: 24px; color: var(--blue-4);
+      font-weight:700; border: 1px solid rgba(255,255,255,0.75);
+      background: linear-gradient(180deg, var(--blue-1) 0%, var(--blue-2) 55%, var(--blue-3) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 12px 30px var(--shadow-2);
+      cursor:pointer; transition: transform .12s ease, box-shadow .2s ease;
+    }
+    .float-btn:hover{ transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 16px 38px rgba(0,0,0,0.4); }
+    .float-dot{
+      width:16px; height:16px; border-radius:50%;
+      background:
+        radial-gradient(60% 60% at 35% 35%, #fff 0%, #f6fdff 25%, transparent 60%),
+        radial-gradient(100% 100% at 60% 60%, var(--blue-1) 0%, var(--blue-2) 60%, var(--blue-3) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 0 10px rgba(60,160,255,0.55);
+    }
+
+    /* Links padrão */
+    a{ color: var(--blue-4); }
+  </style>
+</head>
+<body>
+
+  <!-- Fundo opcional de mapa + bokeh -->
+  <div class="bg-map"></div>
+  <div class="bokeh"></div>
+
+  <!-- Superbar -->
+  <header class="superbar">
+    <div class="logo">
+      <div class="orb"></div>
+      <div class="brand">Bife Geopolítica</div>
+    </div>
+    <button class="aero-btn" onclick="openModal('album')">Álbum</button>
+    <button class="aero-btn" onclick="openModal('colab')">Colaborações</button>
+    <button class="aero-btn primary" onclick="openModal('info')">Informações</button>
+    <div class="super-actions">
+      <button class="aero-btn success" onclick="location.href='https://discord.gg/a9fx4WUcu'">Discord</button>
+      <button class="aero-btn primary" onclick="location.href='https://google.com'">Google</button>
+    </div>
+  </header>
+
+  <!-- Conteúdo -->
+  <main class="wrap">
+    <!-- Bem-vindo (mantido) -->
+    <section class="welcome">
+      <h1>Bem vindo ao nosso site!</h1>
+      <p></p>
+
+      <!-- Botões grandes (como no site da imagem) -->
+      <div class="cta-row">
+        <a class="cta-link" href="https://discord.gg/a9fx4WUcu" target="_blank">Entre no nosso Discord!</a>
+        <a class="cta-link" href="#" target="_blank">Entre no nosso canal do Whatsapp!</a>
+      </div>
+    </section>
+
+    <!-- Grid principal (mantido) -->
+    <section class="grid">
+      <div class="panel"></div>
+      <div class="panel"></div>
+
+      <!-- Substitua pelos seus arquivos (evite caminhos locais tipo C:\...) -->
+      <div class="panel image">
+        <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (2).png" alt="Imagem 1">
+      </div>
+      <div class="panel image">
+        <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (3).png" alt="Imagem 2">
+      </div>
+
+      <div class="panel cta">
+        <a href="https://discord.gg/a9fx4WUcu" target="_blank">Entrar no Discord</a>
+      </div>
+      <div class="panel cta">
+        <a href="https://www.whatsapp.com/channel/0029Vaydp755fM5iDkftQI20" target="_blank">Ir para o Google</a>
+      </div>
+    </section>
+
+    <!-- Janela de história (mantida) -->
+    <section class="window">
+      <div class="window-titlebar">
+        Conheça a nossa história!
+        <div class="caption">
+          <div class="cap-btn"></div>
+          <div class="cap-btn"></div>
+          <div class="cap-btn close"></div>
+        </div>
+      </div>
+      <p>
+              O servidor Bife Geopolítica tem autoria de Henri e Emanulito,
+
+              pessoasque já chegaram a fundar vários servidores anteriores,
+ todos antepassados do
+              servidor atual.
+          </p>
+  <h1>
+
+TerraCB (2021-2024)</h1>
+  <p>Tudo começou no TerraCB Primitivo,
+ servidor esse criado por Emanulito em 2021,
+
+       o servidor até então era apenas entre amigos,
+ e não de fato um servidor público.
+       Com o tempo o servidor foi ficando esquecido,
+      apenas sendo relembrado no final de 2023. 
+Já agora, o TerraCB tinha mais cara do que é hoje, virando meio que um "RPG de Países" entre amigos, com isso Emanulito acabou chamando Henri para jogar neste "RPG". Henri ficou muito interessado pela estética de RPG misturado com Minecraft, e passou a jogar com frequência. 
+
+
+  Posteriormente Emanulito decidiu colocar Henri como subdono, e com isso, aos poucos o servidor foi deixando de ser entre amigos e ficando mais público. Depois de alguns meses o mesmo acabou desistindo do projeto, deixando assim a liderança do servidor para Henri.
+  Henri como dono do servidor, fez diversas melhorias para o servidor, como a divulgação e a criação de um servidor do discord para o TerraCB. 
+
+
+  Porém, Emanulito quis voltar para o servidor posteriormente, assim Henri decidindo colocar o mesmo como subdono, oque ocasionou na criação do próximo servidor, assim o Terra CB sendo substituido pelo Nova Terra CB.
+
+
+  </p>
+  <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (4).png" alt="">
+  <h1>Nova Terra CB (2024) 
+</h1>
+  <p>O Nova Terra CB teve vários nomes, porém o mais conhecido foi "Nova Terra CB", foi basicamente o servidor anterior só que público, o servidor apesar da host ter sido bem ruim, em Outubro de 2024, ele já se encontrava com mais de 100 membros no discord, e com 8 pessoas online todos os dias no Minecraft. 
+
+
+  Porém esse auge durou pouco, e o servidor começou a enfrentar diversos problemas, a host do servidor era o Aternos, oque causava um pouco lag devido a alta quantidade de jogadores, oque afetava a jogabilidade, começou a ter vários ataques hackers, e também o Discord começou a ficar cheio de toxidade e poluído, assim tendo brigas constantes. 
+
+
+  O Terra CB teve seu fim no final de 2024, devido a alta toxidade e a crítica constante de que o servidor não tinha uma host paga, deixando memórias marcadas em diversos veteranos inclusive estão no atual Bife Geopolítica. 
+
+</p>
+<img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (13).png" alt="">
+  <h1>EarthCB Geopolítica (2025)</h1>
+  <p>
+
+  Criado no início de 2025, o EarthCB Geopolítica foi uma recriação mais moderna do antigo Nova Terra CB, já com host paga e com diversar melhorias comparadas ao servidor anterior, o servidor ficou bem movimentado, tinham várias pessoas falando no discord e dentro do jogo, parecia realmente agora estar no auge. 
+
+  Porém devido a conflitos internos entre a staff, o servidor que tinha muitas esperanças e futuro acabou falindo, deixando dezenas de membros arasados com o fim do servidor. 
+ Seu fim se deu em Março de 2025.</p>
+      <div class="window-body">
+        Em construção — aqui virá a linha do tempo, curiosidades e marcos da comunidade com o charme do Aero Glass.
+      </div>
+    </section>
+  </main>
+
+  <!-- Rodapé (mantido) -->
+  <footer>
+    © 2025 Bife Geopolítica — Todos os direitos reservados.
+  </footer>
+
+  <!-- Botões flutuantes (mantidos) -->
+  <div class="floating">
+    <button class="float-btn" onclick="openModal('info')"><span class="float-dot"></span> Informações</button>
+    <button class="float-btn" onclick="openModal('colab')"><span class="float-dot"></span> Colaborações</button>
+    <button class="float-btn" onclick="openModal('album')"><span class="float-dot"></span> Álbum</button>
+  </div>
+
+  <!-- MODAIS (mantidos com conteúdo original) -->
+  <div id="info" class="modal" role="dialog" aria-modal="true" aria-labelledby="info-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <strong id="info-title">Informações</strong>
+        <button class="modal-close" onclick="closeModal('info')" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>IP Java:</strong> bife.minehost.com.br:26004</p>
+        <p><strong>IP Bedrock:</strong> bife.minehost.com.br</p>
+        <p><strong>Porta:</strong> 26004</p>
+        <p><strong>Versão:</strong> 1.21.x</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="colab" class="modal" role="dialog" aria-modal="true" aria-labelledby="colab-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <strong id="colab-title">Colaborações</strong>
+        <button class="modal-close" onclick="closeModal('colab')" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Colabore para a host do servidor!</strong></p>
+        <p>Para mantermos o servidor ativo, precisamos pagar R$ 60 todo mês. Se possível, contribua com pelo menos R$ 1 via Pix.</p>
+        <p>• Todos que contribuírem receberão benefícios especiais (lista completa em breve) incluindo o cargo de <strong>Colaborador</strong>.<br>
+           • Quem contribuir impulsionando o servidor poderá receber o cargo.</p>
+        <p><strong>Chave Pix:</strong> jutayjunior732@gmail.com<br>
+           <strong>Destinatário:</strong> Emanuel Chitolina...</p>
+        <p><strong>Benefícios para doações acima de R$ 5,00:</strong><br>
+           • Armadura completa de diamante<br>
+           • Ferramentas completas de diamante<br>
+           • 2 packs de pão<br>
+           • Tesoura encantada (Eficiência V)<br>
+           • Balde de água</p>
+           <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (14).png" alt="">
+      </div>
+    </div>
+  </div>
+
+  <div id="album" class="modal" role="dialog" aria-modal="true" aria-labelledby="album-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <strong id="album-title">Álbum</strong>
+        <button class="modal-close" onclick="closeModal('album')" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Álbum de Memórias do Servidor</strong></p>
+        <p>Este é o espaço onde guardamos para sempre as melhores lembranças do servidor: prints, conquistas e acontecimentos.</p>
+        <p>Em breve adicionaremos as primeiras imagens!</p>
+       <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (11).png" alt="">
+  <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (12).png" alt="">
+   <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (10).png" alt="">
+    <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (9).png" alt="">
+     <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (5).png" alt="">
+      <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (8).png" alt="">
+       <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (17).png" alt="">
+        <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (15).png" alt="">
+         <img src="c:\Users\Edilena\Desktop\licitação EDINAR FLORES\CERTIDÕES\unnamed (16).png" alt="">
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    window.addEventListener('click', (e) => {
+      if (e.target.classList && e.target.classList.contains('modal')){
+        e.target.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape'){
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
+</body>
+</html>
